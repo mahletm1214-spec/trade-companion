@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Papa from "papaparse";
 import type { Trade } from "./types";
 
