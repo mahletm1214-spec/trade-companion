@@ -140,7 +140,7 @@ export function rDistribution(trades: Trade[]) {
     const b = r <= -2 ? buckets[0] : r < -1 ? buckets[1] : r < 0 ? buckets[2] : r === 0 ? buckets[3] : r < 1 ? buckets[4] : r < 2 ? buckets[5] : r < 3 ? buckets[6] : buckets[7];
     counts[b!] = (counts[b!] ?? 0) + 1;
   }
-  return buckets.map((b) => ({ key: b, count: counts[b] }));
+  return buckets.map((b) => ({ key: b, count: counts[b] ?? 0 }));
 }
 
 export function mode(values: (string | null | undefined)[]) {
