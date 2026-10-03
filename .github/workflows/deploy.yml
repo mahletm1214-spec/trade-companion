@@ -34,6 +34,13 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check build output
+        run: |
+          echo "Files in project:"
+          ls -la
+          echo "Directories:"
+          find . -maxdepth 2 -type d
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
