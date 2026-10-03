@@ -10,10 +10,10 @@ const NUMS = ["entry", "stop_loss", "take_profit", "position_size", "risk_pct", 
 function norm(row: Record<string, unknown>): Trade {
   const t = { ...row } as Record<string, unknown>;
   for (const k of NUMS) t[k] = t[k] === null || t[k] === undefined ? (k === "pnl" || k === "r_multiple" ? 0 : null) : Number(t[k]);
-  t.trade_time = t.trade_time ? String(t.trade_time).slice(0, 5) : null;
-  t.exit_time = t.exit_time ? String(t.exit_time).slice(0, 5) : null;
-  t.confluences = (t.confluences as string[]) ?? [];
-  t.ict = (t.ict as object) ?? {};
+  t["trade_time"] = t["trade_time"] ? String(t["trade_time"]).slice(0, 5) : null;
+  t["exit_time"] = t["exit_time"] ? String(t["exit_time"]).slice(0, 5) : null;
+  t["confluences"] = (t["confluences"] as string[]) ?? [];
+  t["ict"] = (t["ict"] as object) ?? {};
   return t as unknown as Trade;
 }
 

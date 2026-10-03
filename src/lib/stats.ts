@@ -45,7 +45,7 @@ export function coreStats(trades: Trade[], settings: Settings) {
   }
   let current = { type: "None" as "Win" | "Loss" | "None", count: 0 };
   for (let i = t.length - 1; i >= 0; i--) {
-    const r = t[i].result;
+    const r = t[i]!.result;
     if (r === "Breakeven") break;
     if (current.type === "None") current = { type: r, count: 1 };
     else if (current.type === r) current.count++;
@@ -68,7 +68,7 @@ export function coreStats(trades: Trade[], settings: Settings) {
 
 export function holdMinutes(t: Trade): number | null {
   if (!t.trade_time || !t.exit_time) return null;
-  const toM = (s: string) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+  const toM = (s: string) => { const [h = 0, m = 0] = s.split(":").map(Number); return h * 60 + m; };
   let d = toM(t.exit_time) - toM(t.trade_time);
   if (d < 0) d += 1440;
   return d;
@@ -98,7 +98,7 @@ export function groupBy(trades: Trade[], keyFn: (t: Trade) => string | string[] 
 }
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-export const dow = (d: string) => DOW[new Date(d + "T00:00:00").getDay()];
+export const dow = (d: string) => DOW[new Date(d + "T00:00:00").getDay()] ?? "";
 export const weekKey = (d: string) => {
   const dt = new Date(d + "T00:00:00");
   const day = (dt.getDay() + 6) % 7;
@@ -138,7 +138,7 @@ export function rDistribution(trades: Trade[]) {
   for (const t of trades) {
     const r = Number(t.r_multiple);
     const b = r <= -2 ? buckets[0] : r < -1 ? buckets[1] : r < 0 ? buckets[2] : r === 0 ? buckets[3] : r < 1 ? buckets[4] : r < 2 ? buckets[5] : r < 3 ? buckets[6] : buckets[7];
-    counts[b]++;
+    counts[b!] = (counts[b!] ?? 0) + 1;
   }
   return buckets.map((b) => ({ key: b, count: counts[b] }));
 }
@@ -166,7 +166,7 @@ export function riskViolations(trades: Trade[], s: Settings): Violation[] {
     if (dayPnl < -Math.abs(s.max_daily_loss)) out.push({ date, rule: "Max daily loss", detail: `Lost ${fmtMoney(dayPnl)} (limit -${fmtMoney(s.max_daily_loss)})` });
     let cl = 0, flagged = false;
     for (let i = 0; i < ts.length; i++) {
-      if (ts[i].result === "Loss") cl++; else if (ts[i].result === "Win") cl = 0;
+      const ri = ts[i]!.result; if (ri === "Loss") cl++; else if (ri === "Win") cl = 0;
       if (cl >= s.max_consecutive_losses && i < ts.length - 1 && !flagged) {
         out.push({ date, rule: "Consecutive losses / daily stop", detail: `Kept trading after ${cl} consecutive losses` });
         flagged = true;
@@ -209,7 +209,8 @@ export function deriveInsights(trades: Trade[], s: Settings, reflections: Reflec
   }
   const emo = eligible(b.emotion).sort((a, b) => a.avgR - b.avgR);
   if (emo.length >= 2) {
-    patterns.push({ title: `Emotion: "${emo[emo.length - 1].key}" performs best`, detail: `${desc(emo[emo.length - 1])}. Worst pre-trade state: "${emo[0].key}" (${desc(emo[0])}).`, tone: "neutral" });
+    const eb = emo[emo.length - 1]!, ew = emo[0]!;
+    patterns.push({ title: `Emotion: "${eb.key}" performs best`, detail: `${desc(eb)}. Worst pre-trade state: "${ew.key}" (${desc(ew)}).`, tone: "neutral" });
   }
 
   // Overtrading & revenge
@@ -221,7 +222,7 @@ export function deriveInsights(trades: Trade[], s: Settings, reflections: Reflec
   }
   const sorted = sortChrono(trades);
   let afterLoss: Trade[] = [];
-  for (let i = 1; i < sorted.length; i++) if (sorted[i - 1].result === "Loss" && sorted[i - 1].trade_date === sorted[i].trade_date) afterLoss.push(sorted[i]);
+  for (let i = 1; i < sorted.length; i++) { const p = sorted[i - 1]!, c2 = sorted[i]!; if (p.result === "Loss" && p.trade_date === c2.trade_date) afterLoss.push(c2); }
   const revengeTagged = trades.filter((t) => t.mistake === "Revenge trade" || t.emotion_before === "Revenge");
   afterLoss = [...new Set([...afterLoss, ...revengeTagged])];
   if (afterLoss.length >= MIN) {
@@ -242,7 +243,7 @@ export function deriveInsights(trades: Trade[], s: Settings, reflections: Reflec
   if (bigLoss.length) execution.push({ title: "Losses larger than 1R", detail: `${bigLoss.length} trades lost more than planned risk — stop discipline issue.`, tone: "bad" });
 
   const violations = riskViolations(trades, s);
-  if (violations.length) hurting.push({ title: "Risk rule violations", detail: `${violations.length} violation(s) logged. Most recent: ${violations[0].rule} on ${violations[0].date}.`, tone: "bad" });
+  if (violations.length) hurting.push({ title: "Risk rule violations", detail: `${violations.length} violation(s) logged. Most recent: ${violations[0]!.rule} on ${violations[0]!.date}.`, tone: "bad" });
 
   // Reflections
   const refl = reflections.filter((r) => r.followed_plan);
