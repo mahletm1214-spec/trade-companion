@@ -34,15 +34,25 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check build output
+      - name: Locate static output directory
+        id: out
         run: |
           echo "Files in project:"
           ls -la
           echo "Directories:"
           find . -maxdepth 2 -type d
+          # Find the directory that actually contains the generated top-level index.html
+          INDEX=$(find dist .output -maxdepth 3 -name index.html -not -path '*/server/*' 2>/dev/null | head -n 1)
+          if [ -z "$INDEX" ]; then
+            echo "ERROR: no index.html found in build output" >&2
+            exit 1
+          fi
+          DIR=$(dirname "$INDEX")
+          echo "Static output directory: $DIR"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
 
       - name: Add SPA fallback for GitHub Pages
-        run: cp dist/client/index.html dist/client/404.html
+        run: cp "${{ steps.out.outputs.dir }}/index.html" "${{ steps.out.outputs.dir }}/404.html"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -50,7 +60,7 @@ jobs:
       - name: Upload build
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist/client
+          path: ${{ steps.out.outputs.dir }}
   deploy:
     needs: build
     runs-on: ubuntu-latest
