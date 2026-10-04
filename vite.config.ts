@@ -6,7 +6,13 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// GitHub Pages serves the site under the /trade-companion/ subpath, so all
+// built asset URLs (CSS/JS/fonts) must be prefixed with that base. The
+// workflow sets GITHUB_PAGES=true; local dev and Lovable preview stay at "/".
+const base = process.env["GITHUB_PAGES"] === "true" ? "/trade-companion/" : "/";
+
 export default defineConfig({
+  vite: { base },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
